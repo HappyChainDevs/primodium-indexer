@@ -22,7 +22,7 @@ services:
     networks:
       - indexer-network
     environment:
-      RPC_HTTP_URL: http://host.docker.internal:8545
+      RPC_HTTP_URL: https://rpc.testnet.happy.tech/http
       DEBUG: "mud:*"
       DATABASE_URL: postgres://user:password@postgres/postgres
     command: pnpm tsx bin/postgres-decoded-indexer
@@ -36,7 +36,7 @@ services:
     networks:
       - indexer-network
     environment:
-      RPC_HTTP_URL: http://host.docker.internal:8545
+      RPC_HTTP_URL: https://rpc.testnet.happy.tech/http
       DEBUG: "mud:*"
       DATABASE_URL: postgres://user:password@postgres/postgres
     ports:
