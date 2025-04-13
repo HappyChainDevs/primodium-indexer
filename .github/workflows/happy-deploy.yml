@@ -1,0 +1,61 @@
+name: Happy Deploy
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+env:
+  PM2_PROCESS_NAME: pg-indexer-reader
+  RPC_HTTP_URL: https://rpc.testnet.happy.tech/http
+  DEBUG: "mud:*"
+
+jobs:
+  happy-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build
+        uses: ./.github/actions/build
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "packages/pg-indexer-reader/*"
+          target: /home/deployer/pg-indexer-reader
+          strip_components: 2
+          rm: true
+
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            chmod -R o+rX /home/deployer/pg-indexer-reader
+            mv /home/deployer/pg-indexer-reader /tmp
+            sudo -u primodium-indexer bash -c '
+              rm -rf /home/primodium-indexer/pg-indexer-reader
+              cp -r /tmp/pg-indexer-reader/* /home/primodium-indexer/pg-indexer-reader
+              cd /home/primodium-indexer/pg-indexer-reader
+
+              cat > .env <<-EOF
+            export DATABASE_URL=${{ secrets.DATABASE_URL }}
+            export DATABASE_URL=${{vars.PRIMODIUM_PG_INDEXER_READER_ENV}}
+            EOF
+
+            pm2 delete ${{ env.PM2_PROCESS_NAME }}
+            pm2 start ./dist/index.js --name ${{ env.PM2_PROCESS_NAME }}
+            pm2 save
+            '
+            rm -rf /tmp/pg-indexer-reader
