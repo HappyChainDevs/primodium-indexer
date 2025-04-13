@@ -53,9 +53,8 @@ jobs:
             export DATABASE_URL=${{ secrets.DATABASE_URL }}
             export ${{vars.PRIMODIUM_PG_INDEXER_READER_ENV}}
             EOF
-
-            pm2 delete ${{ env.PM2_PROCESS_NAME }}
-            pm2 start ./dist/index.js --name ${{ env.PM2_PROCESS_NAME }}
-            pm2 save
+              pm2 delete ${{ env.PM2_PROCESS_NAME }}
+              pm2 start ./dist/bin/postgres-frontend.js --name ${{ env.PM2_PROCESS_NAME }}
+              pm2 save
             '
             rm -rf /tmp/pg-indexer-reader
