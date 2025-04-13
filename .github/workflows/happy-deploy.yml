@@ -46,7 +46,7 @@ jobs:
             mv /home/deployer/pg-indexer-reader /tmp
             sudo -u primodium-indexer bash -c '
               rm -rf /home/primodium-indexer/pg-indexer-reader
-              cp -r /tmp/pg-indexer-reader/* /home/primodium-indexer/pg-indexer-reader
+              cp -r /tmp/pg-indexer-reader /home/primodium-indexer/pg-indexer-reader
               cd /home/primodium-indexer/pg-indexer-reader
 
               cat > .env <<-EOF
