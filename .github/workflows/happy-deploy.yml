@@ -22,6 +22,12 @@ jobs:
       - name: Build
         uses: ./.github/actions/build
 
+      - name: Remove symlinks
+        run: |
+          rsync -aL packages/pg-indexer-reader/node_modules/ /tmp/node_modules_real/
+          rm -rf packages/pg-indexer-reader/node_modules
+          mv /tmp/node_modules_real packages/pg-indexer-reader/node_modules
+
       - name: Copy files to server
         uses: appleboy/scp-action@v0.1.7
         with:
