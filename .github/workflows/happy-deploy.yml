@@ -54,8 +54,9 @@ jobs:
             export ${{vars.PRIMODIUM_PG_INDEXER_READER_ENV}}
             EOF
               pm2 delete ${{ env.PM2_PROCESS_NAME }}
-
               source .env && pm2 start ./packages/pg-indexer-reader/dist/bin/postgres-frontend.js --name ${{ env.PM2_PROCESS_NAME_READER }}
+
+              pm2 delete ${{ env.PM2_PROCESS_NAME_WRITER }}
               source .env && pm2 start --name ${{ env.PM2_PROCESS_NAME_WRITER }} npx -- -p @latticexyz/store-indexer postgres-decoded-indexer
 
               pm2 save
