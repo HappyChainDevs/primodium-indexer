@@ -5,7 +5,8 @@ on:
   pull_request:
 
 env:
-  PM2_PROCESS_NAME: pg-indexer-reader
+  PM2_PROCESS_NAME_READER: pg-indexer-reader
+  PM2_PROCESS_NAME_WRITER: pg-indexer-writer
   RPC_HTTP_URL: https://rpc.testnet.happy.tech/http
   DEBUG: "mud:*"
 
@@ -53,7 +54,10 @@ jobs:
             export ${{vars.PRIMODIUM_PG_INDEXER_READER_ENV}}
             EOF
               pm2 delete ${{ env.PM2_PROCESS_NAME }}
-              pm2 start ./packages/pg-indexer-reader/dist/bin/postgres-frontend.js --name ${{ env.PM2_PROCESS_NAME }}
+
+              source .env && pm2 start ./packages/pg-indexer-reader/dist/bin/postgres-frontend.js --name ${{ env.PM2_PROCESS_NAME_READER }}
+              source .env && pm2 start --name ${{ env.PM2_PROCESS_NAME_WRITER }} npx -- -p @latticexyz/store-indexer@2.2.21 postgres-decoded-indexer
+
               pm2 save
             '
             rm -rf /tmp/primodium-indexer
