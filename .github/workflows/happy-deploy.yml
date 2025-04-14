@@ -1,0 +1,68 @@
+name: Happy Deploy
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+env:
+  PM2_PROCESS_NAME_READER: pg-indexer-reader
+  PM2_PROCESS_NAME_WRITER: pg-indexer-writer
+  RPC_HTTP_URL: https://rpc.testnet.happy.tech/http
+  DEBUG: "mud:*"
+
+jobs:
+  happy-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build
+        uses: ./.github/actions/build
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "."
+          target: /home/deployer/primodium-indexer
+          rm: true
+
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            chmod -R o+rX /home/deployer/primodium-indexer
+            mv /home/deployer/primodium-indexer /tmp
+            sudo -u primodium-indexer bash -c '
+              rm -rf /home/primodium-indexer/primodium-indexer
+              cp -r /tmp/primodium-indexer /home/primodium-indexer/primodium-indexer
+              cd /home/primodium-indexer/primodium-indexer
+
+              cat > .env <<-EOF
+            export DATABASE_URL=${{ secrets.DATABASE_URL }}
+            export ${{vars.PRIMODIUM_PG_INDEXER_READER_ENV}}
+            EOF
+
+              export NVM_DIR="/home/primodium-indexer/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+              nvm use 18
+              pm2 delete ${{ env.PM2_PROCESS_NAME }}
+              source .env && pm2 start ./packages/pg-indexer-reader/dist/bin/postgres-frontend.js --name ${{ env.PM2_PROCESS_NAME_READER }}
+
+              pm2 delete ${{ env.PM2_PROCESS_NAME_WRITER }}
+              source .env && pm2 start --name ${{ env.PM2_PROCESS_NAME_WRITER }} npx -- -y -p @latticexyz/store-indexer postgres-decoded-indexer
+
+              pm2 save
+            '
+            rm -rf /tmp/primodium-indexer
