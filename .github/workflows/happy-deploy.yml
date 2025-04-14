@@ -53,6 +53,8 @@ jobs:
             export DATABASE_URL=${{ secrets.DATABASE_URL }}
             export ${{vars.PRIMODIUM_PG_INDEXER_READER_ENV}}
             EOF
+
+              nvm use 18
               pm2 delete ${{ env.PM2_PROCESS_NAME }}
               source .env && pm2 start ./packages/pg-indexer-reader/dist/bin/postgres-frontend.js --name ${{ env.PM2_PROCESS_NAME_READER }}
 
