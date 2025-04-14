@@ -54,6 +54,8 @@ jobs:
             export ${{vars.PRIMODIUM_PG_INDEXER_READER_ENV}}
             EOF
 
+              export NVM_DIR="/home/primodium-indexer/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
               nvm use 18
               pm2 delete ${{ env.PM2_PROCESS_NAME }}
               source .env && pm2 start ./packages/pg-indexer-reader/dist/bin/postgres-frontend.js --name ${{ env.PM2_PROCESS_NAME_READER }}
